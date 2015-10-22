@@ -1,6 +1,6 @@
 package com.mehmetakiftutuncu.myawesomeproject.controllers
 
-import com.mehmetakiftutuncu.myawesomeproject.models.Awesomeness
+import com.mehmetakiftutuncu.myawesomeproject.models.{Suckiness, Awesomeness}
 import org.joda.time.DateTime
 import play.api.mvc._
 
@@ -19,7 +19,9 @@ class Application extends Controller {
     val result = if (awesomeness.isAwesome) {
       s"$name, you my friend, are awesome!"
     } else {
-      s"Sorry $name but you just suck."
+      val level: String = Suckiness.howBad(awesomeness)
+
+      s"Sorry $name but you just suck $level."
     }
 
     Ok(result)
