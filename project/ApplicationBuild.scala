@@ -1,36 +1,60 @@
 import play.sbt.routes.RoutesKeys._
-import sbt._
 import sbt.Keys._
+import sbt._
 
 object ApplicationBuild extends Build {
   /**********************
    * COMMON DEFINITIONS *
    **********************/
-  val applicationName         = "myawesomeproject"
-  val applicationVersion      = "1.0-SNAPSHOT"
-  val applicationOrganization = "com.mehmetakiftutuncu.myawesomeproject"
-  val applicationScalaVersion = "2.11.7"
-  val applicationJavaOptions  = Seq()
-  val applicationScalaOptions = Seq("-deprecation", "-unchecked", "-feature")
+  lazy val applicationName          = "myawesomeproject"
+  lazy val applicationVersion       = "latest"
+  lazy val applicationOrganization  = "com.mehmetakiftutuncu.myawesomeproject"
+  lazy val applicationScalaVersion  = "2.11.7"
+  lazy val applicationJavaOptions   = Seq()
+  lazy val applicationJavacOptions  = Seq()
+  lazy val applicationScalacOptions = Seq("-deprecation", "-unchecked", "-feature")
+
+  // Base directory for our jars
+  val libBase = file("lib")
+
+  // Get default cross target at the beginning
+  val defaultCrossTarget = crossTarget
 
   /*******************
    * MODULE SETTINGS *
    *******************/
-  val commonSettings = Seq(
-    version         := applicationVersion,
-    organization    := applicationOrganization,
-    scalaVersion    := applicationScalaVersion,
-    routesGenerator := InjectedRoutesGenerator,
-    scalacOptions  ++= applicationScalaOptions,
-    javacOptions   ++= applicationJavaOptions,
-    resolvers      ++= Seq(
-      "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
-    )
+  lazy val artifactSettings = Seq(
+    // Don't generate jar for doc
+    publishArtifact in packageDoc := false,
+
+    // Don't generate jar for src
+    publishArtifact in packageSrc := false
   )
 
-  val coreSettings = commonSettings ++ Seq()
+  lazy val commonSettings = Seq(
+    version          := applicationVersion,
+    organization     := applicationOrganization,
+    scalaVersion     := applicationScalaVersion,
+    routesGenerator  := InjectedRoutesGenerator,
+    exportJars       := true,
 
-  val modelsSettings = commonSettings ++ Seq()
+    // Use "lib" in root instead of inside each module
+    unmanagedBase := libBase,
+
+    // Put binary jars to "lib" in root
+    crossTarget in packageBin := libBase,
+
+    scalacOptions   ++= applicationScalacOptions,
+    javacOptions    ++= applicationJavacOptions,
+    javaOptions     ++= applicationJavaOptions,
+    resolvers       ++= Seq(
+      "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+    )
+  ) ++ artifactSettings
+
+  lazy val coreSettings = commonSettings ++ Seq()
+
+  lazy val modelsSettings = commonSettings ++ Seq()
 
   /****************************
    * SBT PROJECTS AND MODULES *
@@ -39,12 +63,12 @@ object ApplicationBuild extends Build {
     .enablePlugins(play.sbt.PlayScala)
     .settings(commonSettings:_*)
     .settings(
-      libraryDependencies ++= Dependencies.commonDependencies
+      libraryDependencies ++= Dependencies.rootDependencies,
+
+      // Put binary jar of root to default cross target
+      crossTarget in packageBin := defaultCrossTarget.value
     )
-    .dependsOn(
-      core % "compile->compile;test->test",
-      models % "compile->compile;test->test"
-    )
+    .aggregate(core, models)
 
   lazy val core = Project("core", file("modules/core"))
     .enablePlugins(play.sbt.PlayScala)
@@ -58,9 +82,6 @@ object ApplicationBuild extends Build {
     .settings(modelsSettings:_*)
     .settings(
       libraryDependencies ++= Dependencies.modelsDependencies
-    )
-    .dependsOn(
-      core % "compile->compile;test->test"
     )
 
   override def rootProject = Option(root)

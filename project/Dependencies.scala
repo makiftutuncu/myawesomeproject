@@ -5,13 +5,13 @@ object Dependencies extends Build {
   /*****************************************
    * CUSTOM LIBRARY DEPENDENCY DEFINITIONS *
    *****************************************/
-  val jodaDateTime = "joda-time" % "joda-time" % "2.8.2"
-  val jodaMoney    = "org.joda" % "joda-money" % "0.10.0"
+  lazy val jodaDateTime = "joda-time" % "joda-time"  % "2.8.2"
+  lazy val jodaMoney    = "org.joda"  % "joda-money" % "0.10.0"
 
   /*********************************************
    * DEPENDENCY SEQUENCES FOR EACH SBT PROJECT *
    *********************************************/
-  val commonDependencies = Seq(
+  lazy val commonDependencies = Seq(
     jdbc,
     cache,
     ws,
@@ -19,9 +19,8 @@ object Dependencies extends Build {
     jodaDateTime
   )
 
-  val coreDependencies = commonDependencies ++ Seq(
-    jodaMoney
-  )
-
-  val modelsDependencies = commonDependencies ++ Seq()
+  // Add customized dependencies to modules if necessary.
+  lazy val rootDependencies   = commonDependencies
+  lazy val coreDependencies   = commonDependencies ++ Seq(jodaMoney)
+  lazy val modelsDependencies = commonDependencies
 }
